@@ -25,4 +25,4 @@ const uploader = (async function (localFilePath) {
   }
 });
 
-export { uploader };
+export default uploader ;
