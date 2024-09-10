@@ -1,6 +1,8 @@
 import Router from "express";
-import { registerUser } from "../controllers/user.controllers.js";
+import { loginUser, logOutUser, registerUser, refreshAccessToken } from "../controllers/user.controllers.js";
 import { upload } from "../middlewares/multer.middleware.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const userRouter = Router();
 userRouter.post("/register", upload.fields([
@@ -13,9 +15,11 @@ userRouter.post("/register", upload.fields([
     maxCount: 1
   }
 ]), registerUser);
-userRouter.get("/register", (req, res) => {
-  console.log("Hello");
-  res.send("Hello");
-});
+
+userRouter.post("/login", loginUser);
+
+//secure routes
+userRouter.post("/logout", verifyJWT ,logOutUser);
+userRouter.post("/refresh-token", refreshAccessToken);
 
 export { userRouter };
