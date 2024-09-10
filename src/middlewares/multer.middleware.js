@@ -5,7 +5,7 @@ const storage = multer.diskStorage({
     cb(null, "./public/temp")
   },
   filename: function (req, file, cb) {
-    cb(null, file.fieldname) // file.fieldname is the name of the input field in the form
+    cb(null, file.originalname) // file.fieldname is the name of the input field in the form
   }
 });
 
