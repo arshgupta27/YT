@@ -41,7 +41,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
   //images
   console.log("File: ", req.files);
-  
+
   const avatarLocalPath = req.files?.avatar[0]?.path;
   let coverImageLocalPath;
   if (req.files?.coverImage) {
@@ -96,7 +96,8 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new APIError(404, "User does not exists");
   }
   const compare = await user.isPasswordCorrect(password);
-
+  console.log(password);
+  
   if (!compare) {
     throw new APIError(401, "Invalid user credentials");
   }
@@ -198,6 +199,95 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     throw new APIError(401, error.message || "Invalid refresh token");
   }
 });
+const changeUserPassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  const userId = req.user?._id;
+  const user = await User.findById(userId);
+  console.log("user 1:", user);
+  
+  if (!user) {
+    throw new APIError(500, "Something went wrong");
+  }
+  const compare = await user.isPasswordCorrect(oldPassword);
+  if (compare) {
+    user.password = newPassword;
+    await user.save({validatebeforeSave: false});
+    const newUser = await User.findById(userId);
+    const c = await newUser.isPasswordCorrect(newPassword);
+    if(c){
+      res.status(200)
+      .json(
+        new APIResponse(200, {}, "Password updated successfully")
+      );
+    } else {
+      throw new APIError(500, "Password was not updated successfully");
+    }
+  } else {
+    throw new APIError(400, "Invalid Old Password");
+  }
+});
 
+const getCurrentUser = asyncHandler(async (req, res) => {
+  res.status(200)
+  .json(
+    new APIResponse(200, req.user, "Current user fetched successfully")
+  );
+});
 
-export { registerUser, loginUser, logOutUser, refreshAccessToken };
+const updateAccountDetails = asyncHandler(async (req, res) => {
+  const {fullName, email} = req.body;
+  if(!fullName && !email){
+    throw new APIError(400, "No input received");
+  }
+  const user = await User.findByIdAndUpdate(req.user._id,
+    {
+      $set: { email, fullName }
+    },
+    {new: true}
+  );
+  if((!fullName || user.fullName === fullName) && (!email || user.email === email)){
+    res.status(200).
+    json(new APIResponse(200, user, "Account details updated successfully"));
+  }
+  else throw new APIError(500, "Something went wrong");
+});
+
+const updateImages = asyncHandler(async (req, res) => {
+  let avatarLocalPath;
+  let coverImageLocalPath;
+  if(req.files?.avatar){
+    avatarLocalPath = req.files?.avatar[0].path;
+  }
+  if(req.files?.coverImage){
+    coverImageLocalPath = req.files?.coverImage[0].path;
+  }
+  // console.log(coverImageLocalPath, avatarLocalPath);
+  
+  if(!avatarLocalPath && !coverImageLocalPath){
+    throw new APIError(400, "No files found");
+  }
+  let avatar, coverImage;
+  let updation = {};  
+  if(avatarLocalPath){
+    avatar = await uploader(avatarLocalPath);
+    updation.avatar = avatar.url;
+  }
+  if(coverImageLocalPath){
+    coverImage = await uploader(coverImageLocalPath);
+    updation.coverImage = coverImage.url;
+  }
+  
+  const user = await User.findByIdAndUpdate(req.user._id,
+    {
+      $set: updation
+    },
+    {new: true}
+  ).select("-password");
+  if((!avatar || user.avatar === avatar.url) && (!coverImage || user.coverImage === coverImage.url)){
+    res.status(200).json(new APIResponse(200, {user}, "Images updated successfully"));
+  } else {
+    throw new APIError(500, "Something went wrong");
+  }
+})
+
+export { registerUser, loginUser, logOutUser, refreshAccessToken, changeUserPassword, getCurrentUser, updateAccountDetails, updateImages };

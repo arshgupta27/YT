@@ -1,3 +1,4 @@
+// import { request } from "express";
 // const asyncHandler = (fun) => async (req, res, next) => {
 //   try {
 //     await fun(req, res, next);
@@ -9,7 +10,6 @@
 //   }
 // }
 
-import { request } from "express";
 
 const asyncHandler = (requestHandler) => {
   return (req, res, next) => {

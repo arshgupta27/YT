@@ -8,6 +8,8 @@ const uploader = (async function (localFilePath) {
     api_secret: process.env.CLOUDINARY_API_SECRET
   });
   // Upload an image
+  console.log("Uploading...");
+  
   try {
     const uploadResult = await cloudinary.uploader.upload
       (localFilePath, {
