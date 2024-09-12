@@ -40,6 +40,8 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   //images
+  console.log("File: ", req.files);
+  
   const avatarLocalPath = req.files?.avatar[0]?.path;
   let coverImageLocalPath;
   if (req.files?.coverImage) {
@@ -158,7 +160,7 @@ const logOutUser = asyncHandler(async (req, res) => {
 });
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
-  const { refreshToken } = req.cookies || req.body.refreshToken;
+  const { refreshToken } = req.cookies.refreshToken || req.body.refreshToken;
   if (!refreshToken) {
     throw new APIError(401, "Unauthorized request");
   }
@@ -181,13 +183,13 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     const { accessToken, refreshToken: newRefreshToken } = await generateAccessAndRefreshToken(user._id);
 
     res.status(200)
-      .cookie("refreshToken", newRefreshToken, options)
       .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", newRefreshToken, options)
       .json(
         new APIResponse(
           200,
           {
-            accessToken, refreshToken: newRefreshToken
+            accessToken, newRefreshToken
           },
           "Access token refreshed successfully"
         )
