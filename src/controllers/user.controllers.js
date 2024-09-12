@@ -1,5 +1,6 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import User from "../models/user.model.js";
+import Subscription from "../models/subscriptions.model.js";
 import { APIError } from "../utils/APIError.js";
 import uploader from "../utils/cloudinary.js";
 import APIResponse from "../utils/APIResponse.js";
@@ -97,7 +98,7 @@ const loginUser = asyncHandler(async (req, res) => {
   }
   const compare = await user.isPasswordCorrect(password);
   console.log(password);
-  
+
   if (!compare) {
     throw new APIError(401, "Invalid user credentials");
   }
@@ -113,7 +114,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
   console.log("User Login:", loggedInUser.fullName);
 
-  res.status(200)
+  return res.status(200)
     .cookie("refreshToken", refreshToken, options)
     .cookie("accessToken", accessToken, options)
     .json(
@@ -148,7 +149,7 @@ const logOutUser = asyncHandler(async (req, res) => {
     secure: true
   };
 
-  res.status(200)
+  return res.status(200)
     .clearCookie("accessToken", options)
     .clearCookie("refreshToken", options)
     .json(
@@ -183,7 +184,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     };
     const { accessToken, refreshToken: newRefreshToken } = await generateAccessAndRefreshToken(user._id);
 
-    res.status(200)
+    return res.status(200)
       .cookie("accessToken", accessToken, options)
       .cookie("refreshToken", newRefreshToken, options)
       .json(
@@ -204,21 +205,21 @@ const changeUserPassword = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
   const user = await User.findById(userId);
   console.log("user 1:", user);
-  
+
   if (!user) {
     throw new APIError(500, "Something went wrong");
   }
   const compare = await user.isPasswordCorrect(oldPassword);
   if (compare) {
     user.password = newPassword;
-    await user.save({validatebeforeSave: false});
+    await user.save({ validatebeforeSave: false });
     const newUser = await User.findById(userId);
     const c = await newUser.isPasswordCorrect(newPassword);
-    if(c){
-      res.status(200)
-      .json(
-        new APIResponse(200, {}, "Password updated successfully")
-      );
+    if (c) {
+      return res.status(200)
+        .json(
+          new APIResponse(200, {}, "Password updated successfully")
+        );
     } else {
       throw new APIError(500, "Password was not updated successfully");
     }
@@ -228,26 +229,26 @@ const changeUserPassword = asyncHandler(async (req, res) => {
 });
 
 const getCurrentUser = asyncHandler(async (req, res) => {
-  res.status(200)
-  .json(
-    new APIResponse(200, req.user, "Current user fetched successfully")
-  );
+  return res.status(200)
+    .json(
+      new APIResponse(200, req.user, "Current user fetched successfully")
+    );
 });
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
-  const {fullName, email} = req.body;
-  if(!fullName && !email){
+  const { fullName, email } = req.body;
+  if (!fullName && !email) {
     throw new APIError(400, "No input received");
   }
   const user = await User.findByIdAndUpdate(req.user._id,
     {
       $set: { email, fullName }
     },
-    {new: true}
+    { new: true }
   );
-  if((!fullName || user.fullName === fullName) && (!email || user.email === email)){
-    res.status(200).
-    json(new APIResponse(200, user, "Account details updated successfully"));
+  if ((!fullName || user.fullName === fullName) && (!email || user.email === email)) {
+    return res.status(200).
+      json(new APIResponse(200, user, "Account details updated successfully"));
   }
   else throw new APIError(500, "Something went wrong");
 });
@@ -255,39 +256,133 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 const updateImages = asyncHandler(async (req, res) => {
   let avatarLocalPath;
   let coverImageLocalPath;
-  if(req.files?.avatar){
+  if (req.files?.avatar) {
     avatarLocalPath = req.files?.avatar[0].path;
   }
-  if(req.files?.coverImage){
+  if (req.files?.coverImage) {
     coverImageLocalPath = req.files?.coverImage[0].path;
   }
-  // console.log(coverImageLocalPath, avatarLocalPath);
-  
-  if(!avatarLocalPath && !coverImageLocalPath){
+
+  if (!avatarLocalPath && !coverImageLocalPath) {
     throw new APIError(400, "No files found");
   }
   let avatar, coverImage;
-  let updation = {};  
-  if(avatarLocalPath){
+  let updation = {};
+  if (avatarLocalPath) {
     avatar = await uploader(avatarLocalPath);
     updation.avatar = avatar.url;
   }
-  if(coverImageLocalPath){
+  if (coverImageLocalPath) {
     coverImage = await uploader(coverImageLocalPath);
     updation.coverImage = coverImage.url;
   }
-  
+
   const user = await User.findByIdAndUpdate(req.user._id,
     {
       $set: updation
     },
-    {new: true}
+    { new: true }
   ).select("-password");
-  if((!avatar || user.avatar === avatar.url) && (!coverImage || user.coverImage === coverImage.url)){
-    res.status(200).json(new APIResponse(200, {user}, "Images updated successfully"));
+  if ((!avatar || user.avatar === avatar.url) && (!coverImage || user.coverImage === coverImage.url)) {
+    return res.status(200).json(new APIResponse(200, { user }, "Images updated successfully"));
   } else {
     throw new APIError(500, "Something went wrong");
   }
+});
+
+const subOrUnsubChannel = asyncHandler(async (req, res) => {
+  const { channelName } = req.body;
+  if (!channelName) {
+    throw new APIError(400, "Channel ID is required");
+  }
+  const user = req.user;
+  const channel = await User.findOne({username: channelName});
+  if (!channel) {
+    throw new APIError(404, "Channel doesn't exists");
+  }
+  console.log("Channel: ", channel);
+  console.log("User: ", user);
+  
+  const subscription = await Subscription.findOne({ subscriber: user._id, channel: channel._id });
+  if (subscription) {
+    await Subscription.findByIdAndDelete(subscription._id);
+  } else {
+    await Subscription.create({ subscriber: user._id, channel: channel._id });
+  }
+  return res.status(200)
+    .json(new APIResponse(200, {}, "Subscription updated successfully"));
+});
+
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+  const { username } = req.params;
+  console.log("Username: ", username);
+  
+  if (!username?.trim())
+    throw new APIError(400, "Username is missing");
+  if(req.cookies?.accessToken){
+    const decodedToken = jwt.verify(req.cookies.accessToken, process.env.ACCESS_TOKEN_SECRET);
+    req.user = await User.findById(decodedToken._id);
+  }
+  const channel = await User.aggregate([
+    {
+      $match: {
+        username: username?.toLowerCase()
+      }
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribers"
+      }
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "subscriber",
+        as: "subscribedTo"
+      }
+    },
+    {
+      $addFields: {
+        subscriberCount: {
+          $size: "$subscribers"
+        },
+        channelsSubscribedToCount: {
+          $size: "$subscribedTo"
+        },
+        isSubscribed: {
+          $cond: {
+            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+            then: true,
+            else: false
+          }
+        }
+      }
+    },
+    {
+      $project: {
+        fullName: 1,
+        username: 1,
+        subscriberCount: 1,
+        channelsSubscribedToCount: 1,
+        isSubscribed: 1,
+        avatar: 1,
+        coverImage: 1,
+        email: 1
+      }
+    }
+  ]);
+  console.log(channel);
+
+  if (!channel?.length) {
+    throw new APIError(404, "Channel doesn't exists");
+  }
+  return res.status(200)
+    .json(new APIResponse(200, channel[0], "Channel data fetched successfully"));
+
 })
 
-export { registerUser, loginUser, logOutUser, refreshAccessToken, changeUserPassword, getCurrentUser, updateAccountDetails, updateImages };
+export { registerUser, loginUser, logOutUser, refreshAccessToken, changeUserPassword, getCurrentUser, updateAccountDetails, updateImages, getUserChannelProfile, subOrUnsubChannel };

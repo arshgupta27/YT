@@ -1,7 +1,6 @@
 import Router from "express";
-import { loginUser, logOutUser, registerUser, refreshAccessToken, changeUserPassword, getCurrentUser, updateAccountDetails, updateImages } from "../controllers/user.controllers.js";
+import { loginUser, logOutUser, registerUser, refreshAccessToken, changeUserPassword, getCurrentUser, updateAccountDetails, updateImages, subOrUnsubChannel, getUserChannelProfile } from "../controllers/user.controllers.js";
 import { upload } from "../middlewares/multer.middleware.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const userRouter = Router();
@@ -34,5 +33,7 @@ userRouter.post("/update-images", verifyJWT, upload.fields([
     maxCount: 1
   }
 ]), updateImages);
+userRouter.post("/sub-or-unsub-channel", verifyJWT, subOrUnsubChannel);
+userRouter.get("/get-user-channel-profile/:username", getUserChannelProfile);
 
 export { userRouter };
