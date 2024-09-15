@@ -2,9 +2,10 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import User from "../models/user.model.js";
 import Subscription from "../models/subscriptions.model.js";
 import { APIError } from "../utils/APIError.js";
-import uploader from "../utils/cloudinary.js";
+import { uploader } from "../utils/cloudinary.js";
 import APIResponse from "../utils/APIResponse.js";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 const generateAccessAndRefreshToken = async (userId) => {
   try {
@@ -41,7 +42,7 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   //images
-  console.log("File: ", req.files);
+  // console.log("File: ", req.files);
 
   const avatarLocalPath = req.files?.avatar[0]?.path;
   let coverImageLocalPath;
@@ -133,8 +134,8 @@ const logOutUser = asyncHandler(async (req, res) => {
   const user = await User.findByIdAndUpdate(
     req.user._id,
     {
-      $set: {
-        refreshToken: ""
+      $unset: {
+        refreshToken: 1
       }
     },
     {
@@ -296,13 +297,13 @@ const subOrUnsubChannel = asyncHandler(async (req, res) => {
     throw new APIError(400, "Channel ID is required");
   }
   const user = req.user;
-  const channel = await User.findOne({username: channelName});
+  const channel = await User.findOne({ username: channelName });
   if (!channel) {
     throw new APIError(404, "Channel doesn't exists");
   }
   console.log("Channel: ", channel);
   console.log("User: ", user);
-  
+
   const subscription = await Subscription.findOne({ subscriber: user._id, channel: channel._id });
   if (subscription) {
     await Subscription.findByIdAndDelete(subscription._id);
@@ -316,10 +317,10 @@ const subOrUnsubChannel = asyncHandler(async (req, res) => {
 const getUserChannelProfile = asyncHandler(async (req, res) => {
   const { username } = req.params;
   console.log("Username: ", username);
-  
+
   if (!username?.trim())
     throw new APIError(400, "Username is missing");
-  if(req.cookies?.accessToken){
+  if (req.cookies?.accessToken) {
     const decodedToken = jwt.verify(req.cookies.accessToken, process.env.ACCESS_TOKEN_SECRET);
     req.user = await User.findById(decodedToken._id);
   }
@@ -382,7 +383,53 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   }
   return res.status(200)
     .json(new APIResponse(200, channel[0], "Channel data fetched successfully"));
+});
 
-})
+const getWatchHistory = asyncHandler(async (req, res) => {
+  // const user = await User.findById(req.user?._id);
+  const user = await User.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(req.user._id)
+      }
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "watchHistory",
+        foreignField: "_id",
+        as: "watchHistory",
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "channel",
+              pipeline: [
+                {
+                  $project: {
+                    fullName: 1,
+                    username: 1,
+                    avatar: 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            $addFields: {
+              owner: {
+                $first: "$channel"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]);
+  return res.status(200)
+    .json(new APIResponse(200, user[0].watchHistory, "Watch history fetched successfully"));
+});
 
-export { registerUser, loginUser, logOutUser, refreshAccessToken, changeUserPassword, getCurrentUser, updateAccountDetails, updateImages, getUserChannelProfile, subOrUnsubChannel };
+export { registerUser, loginUser, logOutUser, refreshAccessToken, changeUserPassword, getCurrentUser, updateAccountDetails, updateImages, getUserChannelProfile, subOrUnsubChannel, getWatchHistory };

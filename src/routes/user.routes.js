@@ -1,5 +1,5 @@
 import Router from "express";
-import { loginUser, logOutUser, registerUser, refreshAccessToken, changeUserPassword, getCurrentUser, updateAccountDetails, updateImages, subOrUnsubChannel, getUserChannelProfile } from "../controllers/user.controllers.js";
+import { loginUser, logOutUser, registerUser, refreshAccessToken, changeUserPassword, getCurrentUser, updateAccountDetails, updateImages, subOrUnsubChannel, getUserChannelProfile, getWatchHistory } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -16,14 +16,15 @@ userRouter.post("/register", upload.fields([
 ]), registerUser);
 
 userRouter.post("/login", loginUser);
-
-//secure routes
-userRouter.post("/logout", verifyJWT ,logOutUser);
+userRouter.get("/get-user-channel-profile/:username", getUserChannelProfile);
 userRouter.post("/refresh-token", refreshAccessToken);
+
+//secured routes
+userRouter.post("/logout", verifyJWT ,logOutUser);
 userRouter.post("/change-password", verifyJWT, changeUserPassword);
 userRouter.get("/get-user", verifyJWT, getCurrentUser);
-userRouter.post("/update-account-details", verifyJWT, updateAccountDetails);
-userRouter.post("/update-images", verifyJWT, upload.fields([
+userRouter.patch("/update-account-details", verifyJWT, updateAccountDetails);
+userRouter.patch("/update-images", verifyJWT, upload.fields([
   {
     name: "avatar",
     maxCount: 1
@@ -34,6 +35,6 @@ userRouter.post("/update-images", verifyJWT, upload.fields([
   }
 ]), updateImages);
 userRouter.post("/sub-or-unsub-channel", verifyJWT, subOrUnsubChannel);
-userRouter.get("/get-user-channel-profile/:username", getUserChannelProfile);
+userRouter.get("/history", verifyJWT, getWatchHistory);
 
 export { userRouter };
