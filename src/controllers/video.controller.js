@@ -146,21 +146,22 @@ const deleteVideo = asyncHandler(async (req, res) => {
   }
   await deleter(getPublicIdFromUrl(video.videoFile), "video");
   await deleter(getPublicIdFromUrl(video.thumbnail), "image");
-  const response = await Video.deleteOne({_id: videoId});
+  const response = await Video.deleteOne({ _id: videoId });
   return res.status(200).json(new APIResponse(200, response, "Video deleted successfully"));
 });
 
 const toggleIsPublished = asyncHandler(async (req, res) => {
-  const {videoId} = req.params;
-  if(!videoId) throw new APIError(400, "No Video Id reveived");
+  const { videoId } = req.params;
+  if (!videoId) throw new APIError(400, "No Video Id reveived");
   const video = await Video.findById(videoId);
-  if(!video) throw new APIError(404, "Invalid video ID");
+  if (!video) throw new APIError(404, "Invalid video ID");
   if (video.owner.toHexString() != req.user._id.toHexString()) {
     throw new APIError(401, "User not authorized to modify this video");
   }
   video.isPublished = !video.isPublished;
   await video.save();
   return res.status(200).json(new APIResponse(200, {}, "Toggled video published status successfully"));
-})
+});
+
 
 export { uploadVideo, getAllVideos, getVideoById, updateVideoDetails, deleteVideo, toggleIsPublished };

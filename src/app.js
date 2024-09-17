@@ -28,4 +28,10 @@ app.use("/api/v1/videos", videoRouter);
 import { tweetRouter } from "./routes/tweet.routes.js";
 app.use("/api/v1/tweets", tweetRouter);
 
+import { likesRouter } from "./routes/like.routes.js";
+app.use("/api/v1/likes", likesRouter);
+
+import { commentRouter } from "./routes/comments.route.js";
+app.use("/api/v1/comments", commentRouter);
+
 export { app };

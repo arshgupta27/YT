@@ -3,6 +3,7 @@ import Tweet from "../models/tweet.model.js";
 import { APIError } from "../utils/APIError.js";
 import APIResponse from "../utils/APIResponse.js";
 import { application } from "express";
+import User from "../models/user.model.js";
 
 const createTweet = asyncHandler(async (req, res) => {
   const { tweet } = req.body;
@@ -45,7 +46,9 @@ const modifyTweet = asyncHandler(async (req, res) => {
 
 const getUserTweets = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, sortBy = "createdAt", sortType = "desc" } = req.query;
-  const userId = req.user._id;
+  const { username } = req.params;
+  const user = await User.find({ username }).select("-password -refreshToken");
+  if(user.length == 0) throw new APIError(404, "Invalid username");
   const options = {
     page: parseInt(page, 10) || 1,
     limit: parseInt(limit, 10) || 10,
@@ -54,7 +57,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
     [
       {
         $match: {
-          owner: userId
+          owner: user[0]._id
         }
       },
       {
@@ -66,7 +69,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
     options
   );
   console.log(tweets);
-  return res.status(200).json(new APIResponse(200, tweets, "Fetched user tweets at page " + page));
+  return res.status(200).json(new APIResponse(200, {tweets, userId: user[0]._id}, "Fetched user tweets at page " + page));
 });
 
 const getAllTweets = asyncHandler(async (req, res) => {

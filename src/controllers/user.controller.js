@@ -6,6 +6,7 @@ import { uploader } from "../utils/cloudinary.js";
 import APIResponse from "../utils/APIResponse.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import Like from "../models/like.model.js";
 
 const generateAccessAndRefreshToken = async (userId) => {
   try {
@@ -432,4 +433,10 @@ const getWatchHistory = asyncHandler(async (req, res) => {
     .json(new APIResponse(200, user[0].watchHistory, "Watch history fetched successfully"));
 });
 
-export { registerUser, loginUser, logOutUser, refreshAccessToken, changeUserPassword, getCurrentUser, updateAccountDetails, updateImages, getUserChannelProfile, subOrUnsubChannel, getWatchHistory };
+const getLikedVideos = asyncHandler(async (req, res) => {
+  const likedVideos = await Like.find({ owner: req.user._id, video: { $exists: true, $ne: null } }).populate("video");
+  return res.status(200)
+    .json(new APIResponse(200, likedVideos, "Liked videos fetched successfully"));
+});
+
+export { registerUser, loginUser, logOutUser, refreshAccessToken, changeUserPassword, getCurrentUser, updateAccountDetails, updateImages, getUserChannelProfile, subOrUnsubChannel, getWatchHistory, getLikedVideos };

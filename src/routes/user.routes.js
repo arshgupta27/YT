@@ -1,5 +1,5 @@
 import Router from "express";
-import { loginUser, logOutUser, registerUser, refreshAccessToken, changeUserPassword, getCurrentUser, updateAccountDetails, updateImages, subOrUnsubChannel, getUserChannelProfile, getWatchHistory } from "../controllers/user.controller.js";
+import { loginUser, logOutUser, registerUser, refreshAccessToken, changeUserPassword, getCurrentUser, updateAccountDetails, updateImages, subOrUnsubChannel, getUserChannelProfile, getWatchHistory, getLikedVideos } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -36,5 +36,6 @@ userRouter.patch("/update-images", verifyJWT, upload.fields([
 ]), updateImages);
 userRouter.post("/sub-or-unsub-channel", verifyJWT, subOrUnsubChannel);
 userRouter.get("/history", verifyJWT, getWatchHistory);
+userRouter.get("/get-liked-videos", verifyJWT, getLikedVideos);
 
 export { userRouter };
