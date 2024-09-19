@@ -6,10 +6,11 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { APIError } from "../utils/APIError.js";
 import Like from "../models/like.model.js";
 import APIResponse from "../utils/APIResponse.js";
+import mongoose from "mongoose";
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  if (!videoId) throw new APIError(404, "No video Id provided");
+  if(!mongoose.isValidObjectId(videoId)) throw new APIError(400, "Invalid video ID");
   const video = await Video.findById(videoId).select("_id");
   if (!video) throw new APIError(401, "Invalid video Id");
   const like = await Like.findOne({
@@ -81,7 +82,7 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
 
 const getTweetLikes = asyncHandler(async (req, res) => {
   const { tweetId } = req.params;
-  if (!tweetId) throw new APIError(404, "No tweet Id provided");
+  if(mongoose.isValidObjectId(tweetId) === false) throw new APIError(401, "Invalid tweet Id");
   const tweet = await Tweet.findById(tweetId).select("_id");
   if (!tweet) throw new APIError(401, "Invalid tweet Id");
   const likes = await Like.find({ tweet: tweetId });
@@ -91,7 +92,7 @@ const getTweetLikes = asyncHandler(async (req, res) => {
 
 const getVideoLikes = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  if (!videoId) throw new APIError(404, "No video Id provided");
+  if(mongoose.isValidObjectId(videoId) === false) throw new APIError(401, "Invalid video Id");
   const video = await Video.findById(videoId).select("_id");
   if (!video) throw new APIError(401, "Invalid video Id");
   const likes = await Like.find({ video: videoId });
@@ -101,7 +102,7 @@ const getVideoLikes = asyncHandler(async (req, res) => {
 
 const getCommentLikes = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
-  if (!commentId) throw new APIError(404, "No comment Id provided");
+  if(mongoose.isValidObjectId(commentId) === false) throw new APIError(401, "Invalid comment Id");
   const comment = await Comment.findById(commentId).select("_id");
   if (!comment) throw new APIError(401, "Invalid comment Id");
   const likes = await Like.find({ tweet: commentId });

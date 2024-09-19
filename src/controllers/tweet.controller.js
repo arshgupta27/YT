@@ -4,6 +4,7 @@ import { APIError } from "../utils/APIError.js";
 import APIResponse from "../utils/APIResponse.js";
 import { application } from "express";
 import User from "../models/user.model.js";
+import mongoose from "mongoose";
 
 const createTweet = asyncHandler(async (req, res) => {
   const { tweet } = req.body;
@@ -18,7 +19,7 @@ const createTweet = asyncHandler(async (req, res) => {
 
 const deleteTweet = asyncHandler(async (req, res) => {
   const { tweetId } = req.params;
-  if (!tweetId) throw new APIError(400, "Tweet Id not received");
+  if(!mongoose.isValidObjectId(tweetId)) throw new APIError(400, "Invalid tweet Id");
   const tweet = await Tweet.findById(tweetId);
   if (!tweet) throw new APIError(404, "Invalid tweet Id");
   if (tweet.owner.toHexString() != req.user._id.toHexString()) {
@@ -30,7 +31,7 @@ const deleteTweet = asyncHandler(async (req, res) => {
 
 const modifyTweet = asyncHandler(async (req, res) => {
   const { tweetId } = req.params, { tweetContent } = req.body;
-  if (!tweetId) throw new APIError(400, "Tweet Id not received");
+  if (!mongoose.isValidObjectId(tweetId)) throw new APIError(400, "Invalid tweet Id");
   if (!tweetContent) throw new APIError(400, "New tweet not received");
   const tweet = await Tweet.findById(tweetId);
   if (!tweet) throw new APIError(404, "Invalid tweet Id");
@@ -48,7 +49,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, sortBy = "createdAt", sortType = "desc" } = req.query;
   const { username } = req.params;
   const user = await User.find({ username }).select("-password -refreshToken");
-  if(user.length == 0) throw new APIError(404, "Invalid username");
+  if(!user) throw new APIError(404, "Invalid username");
   const options = {
     page: parseInt(page, 10) || 1,
     limit: parseInt(limit, 10) || 10,

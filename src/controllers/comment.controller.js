@@ -3,9 +3,11 @@ import { asyncHandler } from "../utils/asyncHandler.js"
 import { APIError } from "../utils/APIError.js"
 import APIResponse from "../utils/APIResponse.js"
 import Video from "../models/video.model.js"
+import mongoose from "mongoose"
 
 const createComment = asyncHandler(async (req, res) => {
   const { videoId } = req.params, { comment } = req.body;
+  if(!mongoose.isValidObjectId(videoId)) throw new APIError(400, "Invalid video Id");
   if (!comment) throw new APIError(400, "Received empty comment");
   const video = await Video.findById(videoId);
   if (!video) throw new APIError(404, "Invalid video Id");
@@ -19,6 +21,7 @@ const createComment = asyncHandler(async (req, res) => {
 
 const deleteComment = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
+  if (!mongoose.isValidObjectId(commentId)) throw new APIError(400, "Invalid comment Id");
   if (!commentId) throw new APIError(400, "Comment Id not received");
   const comment = await Comment.findById(commentId);
   if (!comment) throw new APIError(404, "Invalid comment Id");
@@ -31,7 +34,7 @@ const deleteComment = asyncHandler(async (req, res) => {
 
 const modifyComment = asyncHandler(async (req, res) => {
   const { commentId } = req.params, { commentContent } = req.body;
-  if (!commentId) throw new APIError(400, "Comment Id not received");
+  if (!mongoose.isValidObjectId(commentId)) throw new APIError(400, "Invalid comment Id");
   if (!commentContent) throw new APIError(400, "New comment not received");
   const comment = await Comment.findById(commentId);
   if (!comment) throw new APIError(404, "Invalid comment Id");
@@ -47,6 +50,7 @@ const modifyComment = asyncHandler(async (req, res) => {
 
 const getVideoComments = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
+  if (!mongoose.isValidObjectId(videoId)) throw new APIError(400, "Invalid video Id");
   if (!videoId) throw new APIError(400, "Video Id not received");
   const video = await Video.findById(videoId);
   if (!video) throw new APIError(404, "Invalid video Id");

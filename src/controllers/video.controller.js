@@ -109,9 +109,7 @@ function getPublicIdFromUrl(url) {
 
 const updateVideoDetails = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  if (!videoId) {
-    throw new APIError(400, "No video ID provided");
-  }
+  if (!mongoose.isValidObjectId(videoId)) throw new APIError(400, "Invalid video ID");
   const video = await Video.findById(videoId);
   if (!video) {
     throw new APIError(400, "Invalid video ID");
@@ -122,12 +120,14 @@ const updateVideoDetails = asyncHandler(async (req, res) => {
   }
   const { title, description } = req.body;
   let oldThumbnail, thumbnailUrl;
+  console.log(req.file);
   if (req.file && req.file.path) {
+    console.log("Uploading new thumbnail");
     oldThumbnail = video.thumbnail;
     thumbnailUrl = await uploader(req.file.path);
     video.thumbnail = thumbnailUrl.secure_url;
+    await deleter(getPublicIdFromUrl(oldThumbnail), "image");
   }
-  await deleter(getPublicIdFromUrl(oldThumbnail), "image");
   video.title = title ? title : video.title;
   video.description = description ? description : video.description;
   const newVideo = await video.save();
@@ -139,7 +139,7 @@ const updateVideoDetails = asyncHandler(async (req, res) => {
 
 const deleteVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  if (!videoId) throw new APIError(404, "No Video Id received");
+  if (!mongoose.isValidObjectId(videoId)) throw new APIError(400, "Invalid video ID");
   const video = await Video.findById(videoId);
   if (video.owner.toHexString() != req.user._id.toHexString()) {
     throw new APIError(401, "User not authorized to modify this video");
@@ -152,7 +152,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
 const toggleIsPublished = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  if (!videoId) throw new APIError(400, "No Video Id reveived");
+  if (!mongoose.isValidObjectId(videoId)) throw new APIError(400, "Invalid video ID");
   const video = await Video.findById(videoId);
   if (!video) throw new APIError(404, "Invalid video ID");
   if (video.owner.toHexString() != req.user._id.toHexString()) {

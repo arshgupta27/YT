@@ -292,28 +292,6 @@ const updateImages = asyncHandler(async (req, res) => {
   }
 });
 
-const subOrUnsubChannel = asyncHandler(async (req, res) => {
-  const { channelName } = req.body;
-  if (!channelName) {
-    throw new APIError(400, "Channel ID is required");
-  }
-  const user = req.user;
-  const channel = await User.findOne({ username: channelName });
-  if (!channel) {
-    throw new APIError(404, "Channel doesn't exists");
-  }
-  console.log("Channel: ", channel);
-  console.log("User: ", user);
-
-  const subscription = await Subscription.findOne({ subscriber: user._id, channel: channel._id });
-  if (subscription) {
-    await Subscription.findByIdAndDelete(subscription._id);
-  } else {
-    await Subscription.create({ subscriber: user._id, channel: channel._id });
-  }
-  return res.status(200)
-    .json(new APIResponse(200, {}, "Subscription updated successfully"));
-});
 
 const getUserChannelProfile = asyncHandler(async (req, res) => {
   const { username } = req.params;
@@ -439,4 +417,4 @@ const getLikedVideos = asyncHandler(async (req, res) => {
     .json(new APIResponse(200, likedVideos, "Liked videos fetched successfully"));
 });
 
-export { registerUser, loginUser, logOutUser, refreshAccessToken, changeUserPassword, getCurrentUser, updateAccountDetails, updateImages, getUserChannelProfile, subOrUnsubChannel, getWatchHistory, getLikedVideos };
+export { registerUser, loginUser, logOutUser, refreshAccessToken, changeUserPassword, getCurrentUser, updateAccountDetails, updateImages, getUserChannelProfile, getWatchHistory, getLikedVideos };

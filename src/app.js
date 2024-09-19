@@ -31,7 +31,19 @@ app.use("/api/v1/tweets", tweetRouter);
 import { likesRouter } from "./routes/like.routes.js";
 app.use("/api/v1/likes", likesRouter);
 
-import { commentRouter } from "./routes/comments.route.js";
+import { commentRouter } from "./routes/comments.routes.js";
 app.use("/api/v1/comments", commentRouter);
+
+import { subscriptionRouter } from "./routes/subscriptions.routes.js";
+app.use("/api/v1/subscriptions", subscriptionRouter);
+
+import { playlistRouter } from "./routes/playlists.routes.js";
+app.use("/api/v1/playlists", playlistRouter);
+
+import { dashboardRouter } from "./routes/dashboard.routes.js";
+app.use("/api/v1/dashboard", dashboardRouter);
+
+import { healthcheckRouter } from "./routes/healthcheck.routes.js";
+app.use("/api/v1/health-check", healthcheckRouter);
 
 export { app };

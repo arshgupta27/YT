@@ -5,7 +5,7 @@ import { deleteVideo, getAllVideos, toggleIsPublished, updateVideoDetails, uploa
 
 const videoRouter = Router();
 
-videoRouter.post("/get-v  ideos", getAllVideos);
+videoRouter.post("/get-videos", getAllVideos);
 videoRouter.get("/get-video-byID/:id", getAllVideos);
 
 //secured routes
